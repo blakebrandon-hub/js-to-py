@@ -73,7 +73,7 @@
         </form>
 
         {% if py_code %}
-          <form method="POST" action="/run">
+          <form id="run-form" method="POST" action="/run">
             <input type="hidden" name="py_code" value="{{ py_code }}">
             <button type="submit" class="btn btn-success btn-lg px-4">
               ▶️ Run Python Code
@@ -83,13 +83,11 @@
       </div>
     </form>
 
-    <!-- Output Display -->
-    {% if output %}
-      <div class="alert alert-secondary mt-5 shadow-sm" role="alert">
-        <strong>Output:</strong>
-        <pre class="mt-2">{{ output }}</pre>
-      </div>
-    {% endif %}
+<!-- Output Display -->
+<div id="output-container" class="alert alert-secondary mt-5 shadow-sm d-none" role="alert">
+  <strong>Output:</strong>
+  <pre id="output" class="mt-2"></pre>
+</div>
 
 
 <div class="text-center my-5">
@@ -100,8 +98,10 @@
 
   </div>
 
-  <!-- Clipboard JS -->
+  
   <script>
+
+    // Clipboard 
     async function pasteCode() {
       try {
         const text = await navigator.clipboard.readText();
@@ -117,6 +117,47 @@
         .then(() => alert("✅ Copied to clipboard!"))
         .catch(() => alert("❌ Failed to copy."));
     }
+
+    // Run Form
+const runForm = document.getElementById("run-form");
+
+if (runForm) {
+  runForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const formData = new FormData(runForm);
+
+    fetch("/run", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-Requested-With": "XMLHttpRequest"
+      }
+    })
+    .then(res => res.text())
+    .then(data => {
+      const outputEl = document.getElementById("output");
+      const outputContainer = document.getElementById("output-container");
+
+      if (outputEl && outputContainer) {
+        outputEl.textContent = data;
+        outputContainer.classList.remove("d-none"); // make it visible
+      }
+    })
+    .catch(err => {
+      const outputEl = document.getElementById("output");
+      const outputContainer = document.getElementById("output-container");
+
+      if (outputEl && outputContainer) {
+        outputEl.textContent = "Error: " + err;
+        outputContainer.classList.remove("d-none");
+      }
+    });
+  });
+}
+
+
+
   </script>
 
 </body>
