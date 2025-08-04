@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import re
 import subprocess
 import sys
@@ -31,9 +31,13 @@ def run_code():
     except Exception as e:
         output = f"❌ Error: {str(e)}"
 
+    # If the request was made via fetch (AJAX), return plain text
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return output
+
+    # Otherwise, render full page (normal form submission)
     return render_template('index.html', js_code='', py_code=py_code, output=output)
 
-import re
 
 def convert_js_to_py(js):
     py = js
@@ -66,6 +70,11 @@ def convert_js_to_py(js):
     py = re.sub(r'\bfalse\b', 'False', py, flags=re.IGNORECASE)
     py = re.sub(r'\bnull\b', 'None', py, flags=re.IGNORECASE)
 
+    # ✅ Convert JS list methods
+    py = re.sub(r'(\w+)\.push\((.*?)\)', r'\1.append(\2)', py)
+    py = re.sub(r'(\w+)\.splice\((\d+),\s*0,\s*(.*?)\)', r'\1.insert(\2, \3)', py)
+    py = re.sub(r'(\w+)\.splice\((\d+),\s*1\)', r'del \1[\2]', py)
+
     # ✅ Add colons to if / elif / while lines
     py = re.sub(
         r'^\s*(if|elif|while)\s*\((.*?)\)\s*\{?\s*$',
@@ -73,14 +82,6 @@ def convert_js_to_py(js):
         py,
         flags=re.MULTILINE
     )
-
-    # Remove lines that contain only whitespace and one or more closing braces
-    py = re.sub(r'^\s*\}+\s*;?\s*$', '', py, flags=re.MULTILINE)
-
-
-
-    # ❌ Remove braces and semicolons AFTER adding colons
-    py = re.sub(r'[{};]', '', py)
 
     # ✅ Add colon to else (must be BEFORE removing braces!)
     py = re.sub(
@@ -90,7 +91,11 @@ def convert_js_to_py(js):
         flags=re.MULTILINE
     )
 
+    # Remove lines that contain only whitespace and one or more closing braces
+    py = re.sub(r'^\s*\}+\s*;?\s*$', '', py, flags=re.MULTILINE)
 
+    # ❌ Remove braces and semicolons AFTER adding colons
+    py = re.sub(r'[{};]', '', py)
 
     # ✅ Final cleanup: apply 4-space indentation
     lines = py.strip().split('\n')
@@ -104,22 +109,19 @@ def convert_js_to_py(js):
             indented_lines.append('')
             continue
 
-        # Dedent before elif or else
         if re.match(r'^(elif .*:|else:)$', stripped):
             indent_level = max(indent_level - 1, 0)
 
-        # Add line with correct indent
         indented_lines.append('    ' * indent_level + stripped)
 
-        # Increase indent after lines ending with ':'
         if stripped.endswith(':'):
             indent_level += 1
 
-        # Optional: decrease indent after return/print
         if re.match(r'^\s*(return|break|continue|pass|raise)\b', stripped) and indent_level > 0:
             indent_level -= 1
 
     return '\n'.join(indented_lines).strip()
+
 
 
 if __name__ == '__main__':
