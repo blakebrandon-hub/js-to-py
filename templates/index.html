@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JS ➡ Python Converter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    header {
+      background: linear-gradient(135deg, #007bff, #6610f2);
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 0 0 1rem 1rem;
+      margin-bottom: 2rem;
+    }
+    textarea {
+      height: 400px;
+      font-family: monospace;
+      border-radius: 0.5rem;
+      resize: vertical;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .form-label {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="display-5 mb-0">JavaScript ➡ Python Converter</h1>
+    <p class="lead">Paste your JS on the left. Get Python on the right.</p>
+  </header>
+
+  <div class="container">
+    <!-- Convert Form -->
+    <form method="POST" action="/">
+      <div class="row g-4">
+        <!-- JavaScript Input -->
+        <div class="col-md-6 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="js_code" class="form-label mb-0">JavaScript</label>
+            <button type="button" class="btn btn-sm btn-outline-secondary" style="color: black;"onclick="pasteCode()">📋 Paste</button>
+          </div>
+          <textarea class="form-control shadow-sm" id="js_code" name="js_code" placeholder="// Type your JavaScript here">{{ js_code }}</textarea>
+        </div>
+
+        <!-- Python Output -->
+        <div class="col-md-6 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="py_code" class="form-label mb-0">Converted Python</label>
+            <button type="button" class="btn btn-sm btn-outline-secondary" style="color: black;" onclick="copyCode()">📄 Copy</button>
+          </div>
+          <textarea class="form-control shadow-sm bg-light" id="py_code" readonly placeholder="Your Python code will appear here...">{{ py_code }}</textarea>
+        </div>
+      </div>
+
+      <!-- Buttons: Convert & Run -->
+      <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+        <form method="POST" action="/">
+          <input type="hidden" name="js_code" value="{{ js_code }}">
+          <button type="submit" class="btn btn-primary btn-lg px-4">
+            🔄 Convert
+          </button>
+        </form>
+
+        {% if py_code %}
+          <form method="POST" action="/run">
+            <input type="hidden" name="py_code" value="{{ py_code }}">
+            <button type="submit" class="btn btn-success btn-lg px-4">
+              ▶️ Run Python Code
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- Output Display -->
+    {% if output %}
+      <div class="alert alert-secondary mt-5 shadow-sm" role="alert">
+        <strong>Output:</strong>
+        <pre class="mt-2">{{ output }}</pre>
+      </div>
+    {% endif %}
+
+
+<div class="text-center my-5">
+  <a href="https://www.buymeacoffee.com/blakebrandon" target="_blank" class="btn btn-warning btn-lg shadow">
+    ☕ Buy Me a Coffee
+  </a>
+</div>
+
+  </div>
+
+  <!-- Clipboard JS -->
+  <script>
+    async function pasteCode() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('js_code').value = text;
+      } catch (err) {
+        alert("⚠️ Unable to paste from clipboard");
+      }
+    }
+
+    function copyCode() {
+      const code = document.getElementById('py_code').value;
+      navigator.clipboard.writeText(code)
+        .then(() => alert("✅ Copied to clipboard!"))
+        .catch(() => alert("❌ Failed to copy."));
+    }
+  </script>
+
+</body>
+</html>
